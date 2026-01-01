@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>User Dashboard — IT Helpdesk</title>
+
+<!-- Google Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Oxanium:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+
+<style>
+:root{--bg:#0b0b0f;--panel: rgba(255,255,255,0.05);--glass: rgba(255,255,255,0.08);--muted: #8b97a5;--accent: #0A84FF;--glass-border: rgba(255,255,255,0.08);--card-radius: 16px;--gap: 20px;--sidebar-width: 360px;--max-width: 1400px;}
+*{box-sizing:border-box;}
+html,body{height:100%;margin:0;font-family: 'Oxanium', sans-serif;color:#e6eef8;}
+body {background: linear-gradient(135deg, #0b0b0f, #0a1f3d, #00172b, #0b0b0f, #002b44, #0a0f2a); background-size: 1200% 1200%; animation: animatedGradient 25s ease infinite; overflow-x:hidden;}
+@keyframes animatedGradient {0% { background-position: 0% 50%; } 25% { background-position: 50% 100%; } 50% { background-position: 100% 50%; } 75% { background-position: 50% 0%; } 100% { background-position: 0% 50%; }}
+.container{max-width:var(--max-width);margin:36px auto;padding:28px;display:grid;grid-template-columns: var(--sidebar-width) 1fr;gap:var(--gap);align-items:start;opacity:0;transform: translateY(12px);animation: fadeUp 0.8s forwards;}
+@keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
+.sidebar{padding:20px;border-radius:var(--card-radius);background:rgba(255,255,255,0.02);backdrop-filter: blur(12px);border:1px solid var(--glass-border);min-height:280px;display:flex;flex-direction:column;position: relative; z-index: 10;}
+.logo{display:flex;gap:12px;align-items:center;margin-bottom:18px;}
+.logo .badge{width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,var(--accent), #2db7ff);display:flex;align-items:center;justify-content:center;color:#00172b;font-weight:700;font-size:18px;box-shadow:0 6px 18px rgba(10,132,255,0.12), inset 0 1px 0 rgba(255,255,255,0.12);}
+.logo h1{font-family: 'Orbitron', sans-serif;font-size:16px;margin:0;color:var(--accent);letter-spacing:1.2px;font-weight:700;}
+.logo .small, .sidebar .user .small{font-family: 'Oxanium', sans-serif;font-size:12px;opacity:0.8;}
+.sidebar .user{margin-top:8px;color:var(--muted);font-size:13px;font-weight:500;}
+.stats{display:flex;flex-direction:column;gap:12px;margin-top:18px;}
+.stat{padding:12px;border-radius:12px;background:rgba(255,255,255,0.01);border:1px solid rgba(255,255,255,0.03);display:flex;justify-content:space-between;align-items:center;transition:0.25s all;font-family: 'Oxanium', sans-serif;}
+.stat:hover{box-shadow:0 0 16px rgba(10,132,255,0.3);}
+.stat .label{font-weight:600;}
+.stat .value{font-size:18px;font-weight:700;color:var(--accent);}
+.form-card{padding:16px;border-radius:var(--card-radius);background:rgba(255,255,255,0.01);backdrop-filter: blur(12px);border:1px solid rgba(255,255,255,0.03);display:flex;flex-direction:column;gap:16px;margin-top:20px;transition: all 0.25s;font-family: 'Oxanium', sans-serif;}
+.form-card:hover{box-shadow:0 0 20px rgba(10,132,255,0.2);}
+.form-card > div:first-child{font-weight:700;font-size:15px;margin-bottom:8px;}
+.form-card .field label{font-size:13px;margin-bottom:4px;display:block;opacity:0.9;}
+.form-card .field input,.form-card .field select,.form-card .field textarea{width:100%;background: rgba(255,255,255,0.02);color: #e6f5ff;border:1px solid rgba(255,255,255,0.05);border-radius:12px;padding:10px;font-family: 'Oxanium', sans-serif;}
+.form-card button{width:100%;padding:12px 0;border:none;border-radius:12px;background:linear-gradient(180deg,var(--accent),#0a6fe6);color:#fff;font-weight:700;cursor:pointer;box-shadow:0 6px 18px rgba(10,132,255,0.2);transition:0.25s all;font-family: 'Oxanium', sans-serif;font-size:15px;}
+.form-card button:hover{transform:translateY(-2px) scale(1.02);box-shadow:0 0 16px rgba(10,132,255,0.8),0 0 32px rgba(10,132,255,0.4);}
+.main{min-height:400px;}
+.header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
+.header .title-block{display:flex;flex-direction:column;}
+.header .title{font-family: 'Orbitron', sans-serif;font-size:20px;color:#cfefff;font-weight:700;letter-spacing:0.8px;}
+.header .small{font-size:13px;opacity:0.8;}
+.header button{padding:10px 18px;border:none;border-radius:12px;background:linear-gradient(180deg,var(--accent),#0a6fe6);color:#fff;font-weight:700;cursor:pointer;box-shadow:0 8px 20px rgba(10,132,255,0.25);transition:0.25s all;margin-left:6px;font-family: 'Oxanium', sans-serif;}
+.header button:hover{transform:translateY(-2px) scale(1.02);box-shadow:0 0 20px rgba(10,132,255,0.8),0 0 32px rgba(10,132,255,0.4);}
+.filter{display:flex;gap:12px;align-items:center;padding:12px;border-radius:14px;background:rgba(255,255,255,0.03);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.04);margin-bottom:16px;flex-wrap:wrap;}
+.filter select,.filter input{background: rgba(255,255,255,0.02);color:#e6eef8;border:1px solid rgba(255,255,255,0.06);padding:8px 12px;border-radius:12px;font-family: 'Oxanium', sans-serif;transition: all 0.25s;}
+.filter select:hover,.filter input:hover{box-shadow:0 0 16px rgba(10,132,255,0.4);border-color:var(--accent);}
+.filter button{background:linear-gradient(180deg,var(--accent),#0a6fe6);border:none;color:#fff;font-weight:700;cursor:pointer;box-shadow:0 8px 20px rgba(10,132,255,0.18);transition: all 0.3s ease;padding:10px 20px;min-width:120px;border-radius:12px;}
+.filter button:hover{transform:translateY(-2px) scale(1.02);box-shadow:0 0 20px rgba(10,132,255,0.8),0 0 32px rgba(10,132,255,0.4);}
+.card{border-radius:var(--card-radius);padding:14px;background:rgba(255,255,255,0.01);backdrop-filter: blur(14px);border:1px solid rgba(255,255,255,0.03);box-shadow:0 12px 40px rgba(2,6,23,0.5);transition:all 0.25s;}
+.card:hover{box-shadow:0 0 20px rgba(10,132,255,0.3);}
+.table-wrap{overflow:auto;}
+table{width:100%;border-collapse:separate;border-spacing:0 12px;font-size:14px;font-family: 'Oxanium', sans-serif;}
+thead th{text-align:left;color:#8b97a5;font-size:12px;padding:12px 12px 6px 12px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;}
+tbody tr{background: rgba(255,255,255,0.02);border-radius:12px;transition:all 0.25s;}
+tbody tr:hover{background: rgba(10,132,255,0.12);box-shadow:0 0 14px rgba(10,132,255,0.4);}
+tbody td{padding:14px 12px;vertical-align:middle;color:#dbeeff;}
+.pill{display:inline-block;padding:6px 12px;border-radius:999px;font-weight:700;font-size:12px;transition:0.25s all;box-shadow:0 0 8px rgba(10,132,255,0.5);}
+.pend{background:rgba(255,215,122,0.15);color:#ffd97a;border:1px solid rgba(255,215,122,0.2);}
+.inprog{background:rgba(103,211,255,0.15);color:#67d3ff;border:1px solid rgba(103,211,255,0.2);}
+.resolved{background:rgba(155,231,154,0.15);color:#9be79a;border:1px solid rgba(155,231,154,0.2);}
+.ticket-img{width:72px;height:72px;object-fit:cover;border-radius:12px;border:1px solid rgba(255,255,255,0.04);cursor:pointer;transition:all 0.25s;}
+.ticket-img:hover{transform:scale(1.08);box-shadow:0 0 18px rgba(10,132,255,0.6);}
+#imageModal{display:none;position:fixed;inset:0;background:rgba(2,6,23,0.95);justify-content:center;align-items:center;z-index:1200;}
+#imageModal img{max-width:88%;max-height:88%;border-radius:16px;box-shadow:0 18px 50px rgba(2,6,23,0.8);border:2px solid var(--accent);}
+#exportModal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);justify-content:center;align-items:center;z-index:1500;}
+#exportModal .modal-content{background:rgba(255,255,255,0.1);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.15);border-radius:16px;padding:32px;max-width:420px;width:90%;text-align:center;}
+#exportModal .modal-content h3{margin:0 0 20px;color:#fff;}
+#exportModal .modal-content .field{margin-bottom:16px;}
+#exportModal .modal-content label{display:block;margin-bottom:6px;font-size:14px;}
+#exportModal .modal-content input{width:100%;padding:10px;border-radius:12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.2);color:#fff;}
+#exportModal .modal-content button{margin-top:12px;padding:12px 24px;background:linear-gradient(180deg,var(--accent),#0a6fe6);border:none;border-radius:12px;color:#fff;font-weight:700;cursor:pointer;}
+#exportModal .modal-content button:hover{transform:scale(1.05);}
+#particles {position: fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:0; filter: blur(0.6px) contrast(1.2);}
+</style>
+</head>
+<body>
+<div id="particles"></div>
+<div class="container">
+
+<aside class="sidebar">
+  <!-- Sidebar content unchanged -->
+  <div class="logo"><div class="badge">IT</div><div><h1>IT Helpdesk</h1><div class="small">User Console</div></div></div>
+  <div class="user"><div id="adminEmail">—</div><div class="small">Signed in</div></div>
+  <div class="stats">
+    <div class="stat"><div class="label">Open Tickets</div><div class="value" id="statOpen">—</div></div>
+    <div class="stat"><div class="label">In Progress</div><div class="value" id="statInProg">—</div></div>
+    <div class="stat"><div class="label">Resolved</div><div class="value" id="statResolved">—</div></div>
+  </div>
+  <div class="form-card">
+    <div>Create New Ticket</div>
+    <div class="field"><label for="ticketTitle">Title</label><input id="ticketTitle" type="text"></div>
+    <div class="field"><label for="ticketCategory">Category</label>
+      <select id="ticketCategory">
+        <option value="">Select category</option>
+        <option value="Software">Software</option>
+        <option value="Hardware">Hardware</option>
+        <option value="Network">Network</option>
+        <option value="Others">Others</option>
+      </select>
+    </div>
+    <div class="field"><label for="ticketDesc">Description</label><textarea id="ticketDesc"></textarea></div>
+    <div class="field"><label for="ticketImage">Attach image (optional)</label><input id="ticketImage" type="file" accept="image/*"></div>
+    <button id="submitTicketBtn">Submit Ticket</button>
+  </div>
+</aside>
+
+<section class="main">
+  <div class="header">
+    <div class="title-block">
+      <div class="title">Tickets Overview</div>
+      <div class="small">Live feed — current admin only</div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <select id="exportSortOrder">
+        <option value="newest">Newest first</option>
+        <option value="oldest">Oldest first</option>
+      </select>
+      <button id="exportCsvBtn">Export CSV</button>
+      <button id="logoutBtn">Sign Out</button>
+    </div>
+  </div>
+
+  <div class="filter card">
+    <select id="filterCategory"><option value="">All categories</option><option value="Software">Software</option><option value="Hardware">Hardware</option><option value="Network">Network</option><option value="Others">Others</option></select>
+    <select id="filterStatus"><option value="">All statuses</option><option value="Pending">Pending</option><option value="In Progress">In Progress</option><option value="Resolved">Resolved</option></select>
+    <input type="date" id="startDate">
+    <input type="date" id="endDate">
+    <button onclick="applyFilters()">Apply</button>
+    <button onclick="clearFilters()">Clear</button>
+  </div>
+
+  <div class="card table-wrap">
+    <table>
+      <thead>
+        <tr><th>User</th><th>Title</th><th>Status</th><th>Category</th><th>Description</th><th>Image</th><th>Created</th><th>AI Priority</th><th>Chat</th></tr>
+      </thead>
+      <tbody id="ticketsTableBody"></tbody>
+    </table>
+  </div>
+</section>
+
+</div>
+
+<!-- Export Date Range Modal -->
+<div id="exportModal">
+  <div class="modal-content">
+    <h3>Export Tickets by Date Range</h3>
+    <div class="field">
+      <label for="exportStartDate">Start Date</label>
+      <input type="date" id="exportStartDate">
+    </div>
+    <div class="field">
+      <label for="exportEndDate">End Date</label>
+      <input type="date" id="exportEndDate">
+    </div>
+    <button onclick="performExport()">Export CSV</button>
+    <button onclick="closeExportModal()" style="margin-left:12px;background:#444;">Cancel</button>
+  </div>
+</div>
+
+<div id="imageModal" onclick="closeImageModal()"><img id="modalImg"></div>
+
+<script>
+const firebaseConfig = {
+  apiKey:"AIzaSyBOaHzIMdXZHOfgDS56sKKL6NLRT41dBmM",
+  authDomain:"it-helpdesk-fyp2.firebaseapp.com",
+  projectId:"it-helpdesk-fyp2",
+  storageBucket:"it-helpdesk-fyp2.firebasestorage.app",
+  messagingSenderId:"168621686870",
+  appId:"1:168621686870:web:a3cd6fd0c36b60c0adbbf7"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth(); 
+const db = firebase.firestore();
+let allTickets = [];
+
+function getBase64(file){
+  return new Promise((resolve,reject)=>{
+    const r=new FileReader();
+    r.onload=()=>resolve(r.result);
+    r.onerror=e=>reject(e);
+    r.readAsDataURL(file);
+  });
+}
+
+window.onload = () => {
+  auth.onAuthStateChanged(user => {
+    if(!user) return window.location="index.html";
+    document.getElementById('adminEmail').textContent=user.email||user.uid;
+    loadTicketsRealtime(user.uid);
+  });
+  document.getElementById('logoutBtn').addEventListener('click',()=>auth.signOut().then(()=>window.location="index.html"));
+  document.getElementById('submitTicketBtn').addEventListener('click',submitTicket);
+  document.getElementById('exportCsvBtn').addEventListener('click',openExportModal);
+};
+
+async function submitTicket(){
+  const user = auth.currentUser;
+  if(!user) return alert("Not logged in");
+  const title = document.getElementById('ticketTitle').value.trim();
+  const category = document.getElementById('ticketCategory').value;
+  const description = document.getElementById('ticketDesc').value.trim();
+  if(!title||!category||!description) return alert("Please fill all fields");
+
+  let imageBase64 = "";
+  const fileEl = document.getElementById('ticketImage');
+  if(fileEl.files.length>0) imageBase64 = await getBase64(fileEl.files[0]);
+
+  await db.collection('tickets').add({
+    userId: user.uid,
+    userEmail: user.email||null,
+    title, category, description,
+    status: "Pending",
+    imageBase64: imageBase64||null,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+
+  document.getElementById('ticketTitle').value="";
+  document.getElementById('ticketCategory').value="";
+  document.getElementById('ticketDesc').value="";
+  document.getElementById('ticketImage').value="";
+}
+
+function loadTicketsRealtime(userId){
+  db.collection('tickets')
+    .where('userId','==',userId)
+    .onSnapshot(snapshot=>{
+      allTickets=[];
+      snapshot.forEach(doc=>{
+        let t=doc.data(); t.id=doc.id;
+        t.createdAt = t.createdAt && t.createdAt.toDate ? t.createdAt.toDate() : new Date();
+        allTickets.push(t);
+      });
+      allTickets.sort((a,b)=>b.createdAt - a.createdAt);
+      renderTickets(allTickets);
+      updateStats(allTickets);
+    });
+}
+
+function renderTickets(tickets){
+  const tbody=document.getElementById('ticketsTableBody');
+  tbody.innerHTML="";
+  tickets.forEach(t=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td>${t.userEmail||'—'}</td>
+      <td>${t.title}</td>
+      <td><span class="pill ${t.status.toLowerCase().replace(' ','').replace('inprogress','inprog')}">${t.status}</span></td>
+      <td>${t.category}</td>
+      <td>${t.description}</td>
+      <td>${t.imageBase64?`<img class="ticket-img" src="${t.imageBase64}" onclick="openImageModal('${t.imageBase64}')">`:'—'}</td>
+      <td>${t.createdAt.toLocaleString()}</td>
+      <td>${calculatePriority(t)}</td>
+      <td><a href="ticket_chat.html?ticketId=${t.id}" title="Chat with admin">💬</a></td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function updateStats(tickets){
+  const open=tickets.filter(x=>x.status==="Pending").length;
+  const inProg=tickets.filter(x=>x.status==="In Progress").length;
+  const resolved=tickets.filter(x=>x.status==="Resolved").length;
+  document.getElementById('statOpen').textContent=open;
+  document.getElementById('statInProg').textContent=inProg;
+  document.getElementById('statResolved').textContent=resolved;
+}
+
+function calculatePriority(t){
+  if(t.status==="Pending") return "High";
+  if(t.status==="In Progress") return "Medium";
+  return "Low";
+}
+
+function openImageModal(src){document.getElementById('imageModal').style.display='flex';document.getElementById('modalImg').src=src;}
+function closeImageModal(){document.getElementById('imageModal').style.display='none';}
+
+function applyFilters(){
+  let cat=document.getElementById('filterCategory').value;
+  let st=document.getElementById('filterStatus').value;
+  let start=document.getElementById('startDate').valueAsDate;
+  let end=document.getElementById('endDate').valueAsDate;
+
+  let filtered=allTickets.filter(t=>{
+    let ok=true;
+    if(cat) ok=ok&&t.category===cat;
+    if(st) ok=ok&&t.status===st;
+    if(start) ok=ok&&t.createdAt>=start;
+    if(end) ok=ok&&t.createdAt<=end;
+    return ok;
+  });
+  renderTickets(filtered);
+}
+
+function clearFilters(){
+  document.getElementById('filterCategory').value="";
+  document.getElementById('filterStatus').value="";
+  document.getElementById('startDate').value="";
+  document.getElementById('endDate').value="";
+  renderTickets(allTickets);
+}
+
+function openExportModal(){
+  document.getElementById('exportStartDate').value = "";
+  document.getElementById('exportEndDate').value = "";
+  document.getElementById('exportModal').style.display = 'flex';
+}
+
+function closeExportModal(){
+  document.getElementById('exportModal').style.display = 'none';
+}
+
+function performExport(){
+  const startStr = document.getElementById('exportStartDate').value;
+  const endStr = document.getElementById('exportEndDate').value;
+
+  if (!startStr && !endStr) {
+    alert("Please select at least a start or end date.");
+    return;
+  }
+
+  const startDate = startStr ? new Date(startStr) : new Date(0); // far past if not set
+  const endDate = endStr ? new Date(endStr) : new Date(); // today if not set
+
+  // Set endDate to end of day
+  endDate.setHours(23,59,59,999);
+
+  const filteredTickets = allTickets.filter(t => {
+    return t.createdAt >= startDate && t.createdAt <= endDate;
+  });
+
+  if (filteredTickets.length === 0) {
+    alert("No tickets found in the selected date range.");
+    return;
+  }
+
+  const sortOrder = document.getElementById('exportSortOrder').value;
+
+  let sortedTickets = [...filteredTickets].sort((a, b) => {
+    return sortOrder === 'oldest' ? a.createdAt - b.createdAt : b.createdAt - a.createdAt;
+  });
+
+  let csv = "User,Title,Status,Category,Description,Created,Priority\n";
+
+  sortedTickets.forEach(t => {
+    const escapedTitle = (t.title || '').replace(/"/g, '""');
+    const escapedDesc = (t.description || '').replace(/"/g, '""');
+    csv += `"${t.userEmail || ''}","${escapedTitle}","${t.status}","${t.category}","${escapedDesc}","${t.createdAt.toLocaleString()}","${calculatePriority(t)}"\n`;
+  });
+
+  const filename = `tickets_${startStr || 'all'}_to_${endStr || 'today'}_${sortOrder}_${new Date().toISOString().slice(0,10)}.csv`;
+
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  a.download = filename;
+  a.click();
+
+  closeExportModal();
+}
+
+/* ====== Particles.js Init ====== */
+particlesJS("particles",{particles:{number:{value:80},color:{value:"#ffffff"},shape:{type:"circle"},opacity:{value:0.3},size:{value:3},line_linked:{enable:true,color:"#ffffff"}},interactivity:{detect_on:"canvas",events:{onhover:{enable:true,mode:"repulse"}}}});
+</script>
+</body>
+</html>
